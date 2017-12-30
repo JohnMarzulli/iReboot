@@ -64,6 +64,7 @@ class InternetStatus(object):
                     self.__logger__.log_info_message(
                         site + ":" + str(contacted))
         except:
+            print "__can_the_internet_be_reached__:EXCEPTION"
             if self.__logger__ is not None:
                 self.__logger__.log_warning_message(
                     "__can_the_internet_be_reached__:EXCEPTION")
