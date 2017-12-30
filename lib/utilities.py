@@ -41,8 +41,6 @@ def ping(host_to_ping):
     parameters += "-n" if is_windows else "-c"
     parameters += " 1 " + host_to_ping
 
-    print ping_command + parameters
-
     # Pinging
     command_result = 0
     ping_process = subprocess.Popen([ping_command + parameters],
@@ -54,9 +52,6 @@ def ping(host_to_ping):
         command_result = ping_process.returncode
     else:
         print "Unable to get ping process!"
-
-
-    print "ping:command_result=" + str(command_result)
 
     return command_result == 0
 

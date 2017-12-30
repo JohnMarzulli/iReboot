@@ -202,6 +202,13 @@ class CommandProcessor(object):
     #-- Recurring thread tasks
     ##############################
 
+    def __get_local_time__(self, time_to_adjust):
+        """
+        Returns the local system time.
+        """
+
+        return time_to_adjust + datetime.timedelta(hours=self.__configuration__.utc_offset)
+
     def __update_webpage__(self):
         """
         Updates the webpage.
@@ -213,69 +220,75 @@ class CommandProcessor(object):
         new_html = "<html><body>\n"
         new_html += "<h1>iReboot</h1>\n"
         new_html += "<h2>Status</h2>\n"
-        new_html += "<table>\n"
-        new_html += "<tr><td>INTERNET</td><td><span style=\"background-color:"
-        if self.__internet_status__.is_internet_up():
-            new_html += "green;\">UP"
-        else:
-            new_html += "red;\">DOWN"
-        new_html += "</span></td></tr>\n"
-        new_html += "<tr><td>Modem</td><td><span style=\"background-color:"
 
-        if self.__relay_controller__.is_relay_on():
-            new_html += "yellow;\">SHUTDOWN"
-        else:
-            new_html += "green;\">POWERED"
-
-        new_html += "</span></td></tr>\n"
-        if self.__relay_controller__.is_relay_on():
-            new_html += "<tr><td>REMAINING</td><td>" + self.__relay_controller__.get_relay_time_remaining() \
-                + "</td></tr>\n"
-
-        new_html += "<tr><td>Last checked</td><td>" + \
-                    str(self.__internet_status__.last_check_time
-                        + datetime.timedelta(hours=self.__configuration__.utc_offset)) + "</td></tr>\n"
-        new_html += "<tr><td>Monitored</td><td>" + \
-            utilities.get_time_text(uptime) + "</td></tr>\n"
-        new_html += "</table><br>"
-
-        new_html += "<h2>Sites</h2>\n"
-
-        new_html += "<table>\n"
-        new_html += "<tr><th>Site</th><th>Up</th></tr>\n"
-        for site in self.__internet_status__.site_status:
-            new_html += "<tr><td>" \
-                        + site \
-                        + "</td><td><span style=\"background-color:"
-            if self.__internet_status__.site_status[site]:
-                new_html += "green;\">ONLINE"
+        try:
+            new_html += "<table>\n"
+            new_html += "<tr><td>INTERNET</td><td><span style=\"background-color:"
+            if self.__internet_status__.is_internet_up():
+                new_html += "green;\">UP"
             else:
                 new_html += "red;\">DOWN"
+            new_html += "</span></td></tr>\n"
+            new_html += "<tr><td>Modem</td><td><span style=\"background-color:"
+
+            if self.__relay_controller__.is_relay_on():
+                new_html += "yellow;\">SHUTDOWN"
+            else:
+                new_html += "green;\">POWERED"
 
             new_html += "</span></td></tr>\n"
-        new_html += "</table><br>\n"
+            if self.__relay_controller__.is_relay_on():
+                new_html += "<tr><td>REMAINING</td><td>" \
+                            + self.__relay_controller__.get_relay_time_remaining() \
+                            + "</td></tr>\n"
 
-        new_html += "<h2>Reboots</h2>\n"
+            new_html += "<tr><td>Last checked</td><td>" \
+                            + str(self.__get_local_time__(self.__internet_status__.last_check_time)) \
+                            + "</td></tr>\n"
+            new_html += "<tr><td>Monitored</td><td>" + \
+                utilities.get_time_text(uptime) + "</td></tr>\n"
+            new_html += "</table><br>"
 
-        num_reboots = len(self.__modem_reboots__)
-        if num_reboots == 0:
-            new_html += "None<BR>"
-        else:
-            new_html += "<ul>"
-            for reboot_time in reversed(self.__modem_reboots__):
-                new_html += "<li>"
-                new_html += str(reboot_time
-                                + datetime.timedelta(hours=self.__configuration__.utc_offset))
-                new_html += "</li>"
-            new_html += "</ul><br>"
+            new_html += "<h2>Sites</h2>\n"
 
-        new_html += "<p>Page generated at " + \
-            str(datetime.datetime.now()) + "</p>"
-        new_html += "</body></html>"
+            new_html += "<table>\n"
+            new_html += "<tr><th>Site</th><th>Up</th></tr>\n"
+            for site in self.__internet_status__.site_status:
+                new_html += "<tr><td>" \
+                            + site \
+                            + "</td><td><span style=\"background-color:"
+                if self.__internet_status__.site_status[site]:
+                    new_html += "green;\">ONLINE"
+                else:
+                    new_html += "red;\">DOWN"
 
-        StatusServer.STATUS_HTML = new_html
+                new_html += "</span></td></tr>\n"
+            new_html += "</table><br>\n"
 
-        return new_html
+            new_html += "<h2>Reboots</h2>\n"
+
+            num_reboots = len(self.__modem_reboots__)
+            if num_reboots == 0:
+                new_html += "None<BR>"
+            else:
+                new_html += "<ul>"
+                for reboot_time in reversed(self.__modem_reboots__):
+                    new_html += "<li>"
+                    new_html += str(self.__get_local_time__(reboot_time))
+                    new_html += "</li>"
+                new_html += "</ul><br>"
+
+            new_html += "<p>Page generated at " + \
+                str(datetime.datetime.now()) + "</p>"
+        except:
+            new_html += "<h2 style=\"background-color:red;\">ERROR generating page:</h2>\n"
+            new_html += sys.exc_info()[0]
+            new_html += "<br>"
+        finally:
+            new_html += "</body></html>"
+            StatusServer.STATUS_HTML = new_html
+
+            return new_html
 
     ##############################
     #-- Servicers
