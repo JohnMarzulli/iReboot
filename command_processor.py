@@ -279,7 +279,7 @@ class CommandProcessor(object):
                 new_html += "</ul><br>"
 
             new_html += "<p>Page generated at " + \
-                str(datetime.datetime.now()) + "</p>"
+                str(self.__get_local_time__(datetime.datetime.now())) + "</p>"
         except:
             new_html += "<h2 style=\"background-color:red;\">ERROR generating page:</h2>\n"
             new_html += sys.exc_info()[0]
