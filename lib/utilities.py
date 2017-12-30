@@ -38,7 +38,7 @@ def ping(host_to_ping):
         path = "/sbin/"
     ping_command = path + "ping"
     parameters = " "
-    parameters += "-n" if is_windows else "-o -c"
+    parameters += "-n" if is_windows else "-c"
     parameters += " 1 " + host_to_ping
 
     print ping_command + parameters
