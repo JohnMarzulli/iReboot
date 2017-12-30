@@ -241,7 +241,9 @@ class CommandProcessor(object):
                 new_html += "<tr><td>REMAINING</td><td>" \
                             + self.__relay_controller__.get_relay_time_remaining() \
                             + "</td></tr>\n"
-
+            new_html += "<tr><td>Uptime</td><td>" \
+                            + utilities.get_time_text(self.__time_since_last_reboot__()) \
+                            + "</td></tr>\n"
             new_html += "<tr><td>Last checked</td><td>" \
                             + str(self.__get_local_time__(self.__internet_status__.last_check_time)) \
                             + "</td></tr>\n"
