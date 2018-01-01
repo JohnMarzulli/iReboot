@@ -55,9 +55,9 @@ class RecurringTask(object):
             if self.__logger__ is not None:
                 error_mesage = "EX(" + self.__task_name__ + ")=" + sys.exc_info()[0]
                 self.__logger__.info(error_mesage)
-
-        if self.__is_running__:
-            threading.Timer(int(self.__task_interval__), self.__run_task__).start()
+        finally:
+            if self.__is_running__:
+                threading.Timer(int(self.__task_interval__), self.__run_task__).start()
 
     def __init__(self, task_name, task_interval, task_callback, logger=None, start_immediate=True):
         """

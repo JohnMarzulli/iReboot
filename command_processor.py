@@ -209,83 +209,82 @@ class CommandProcessor(object):
 
         return time_to_adjust + datetime.timedelta(hours=self.__configuration__.utc_offset)
 
+    def __build_table_cell_and_text__(self, key, text_dictionary, color_dictionary):
+        return "<td style=\"background-color:" + color_dictionary[key] + "; width: 50%; margin-left:auto; margin-right: auto; \">" + text_dictionary[key] + "</td>"
+
     def __update_webpage__(self):
         """
         Updates the webpage.
         """
 
-        uptime = (datetime.datetime.now() -
-                  self.__system_start_time__).total_seconds()
-
-        new_html = "<html><body>\n"
-        new_html += "<h1>iReboot</h1>\n"
-        new_html += "<h2>Status</h2>\n"
-
         try:
-            new_html += "<table>\n"
-            new_html += "<tr><td>INTERNET</td><td><span style=\"background-color:"
-            if self.__internet_status__.is_internet_up():
-                new_html += "green;\">UP"
-            else:
-                new_html += "red;\">DOWN"
-            new_html += "</span></td></tr>\n"
-            new_html += "<tr><td>Modem</td><td><span style=\"background-color:"
+            new_html = open("response_template.html", "r").read()
 
-            if self.__relay_controller__.is_relay_on():
-                new_html += "yellow;\">SHUTDOWN"
-            else:
-                new_html += "green;\">POWERED"
+            # <!-- SUBSTITUTIONS -->
+            #
+            # <!-- $page_generation_time$ -->
+            # <!-- $seconds_between_checks$ -->
+            # <!-- $uptime$ -->
+            # <!-- $last_check_time$ -->
+            # <!-- $time_since_last_reboot$ -->
+            # <!-- $relay_time_remaining$ -->
+            # <!-- $modem_status_with_style$ -->
+            # <!-- $internet_status_with_style$ -->
+            # <!-- $site_status_rows$ -->
+            # <!-- $reboots_list$ -->
 
-            new_html += "</span></td></tr>\n"
-            if self.__relay_controller__.is_relay_on():
-                new_html += "<tr><td>REMAINING</td><td>" \
-                            + self.__relay_controller__.get_relay_time_remaining() \
-                            + "</td></tr>\n"
-            new_html += "<tr><td>Uptime</td><td>" \
-                            + utilities.get_time_text(self.__time_since_last_reboot__()) \
-                            + "</td></tr>\n"
-            new_html += "<tr><td>Last checked</td><td>" \
-                            + str(self.__get_local_time__(self.__internet_status__.last_check_time)) \
-                            + "</td></tr>\n"
-            new_html += "<tr><td>Monitored</td><td>" + \
-                utilities.get_time_text(uptime) + "</td></tr>\n"
-            new_html += "</table><br>"
+            online_status_colors = {True: "green", False: "red"}
+            modem_status_text = {True: "ONLINE", False: "OFFLINE"}
+            relay_status_text = {True: "SHUTDOWN", False: "POWERED"}
+            relay_status_colors = {True: "yellow", False: "green"}
 
-            new_html += "<h2>Sites</h2>\n"
+            page_generation_time = str(
+                self.__get_local_time__(datetime.datetime.now()))
+            uptime = (datetime.datetime.now() -
+                      self.__system_start_time__).total_seconds()
+            modem_status_and_style = self.__build_table_cell_and_text__(
+                self.__relay_controller__.is_relay_on(), relay_status_text, relay_status_colors)
+            internet_status_and_style = self.__build_table_cell_and_text__(
+                self.__internet_status__.is_internet_up(), modem_status_text, online_status_colors)
+            site_status_table_rows = ""
 
-            new_html += "<table>\n"
-            new_html += "<tr><th>Site</th><th>Up</th></tr>\n"
-            for site in self.__internet_status__.site_status:
-                new_html += "<tr><td>" \
-                            + site \
-                            + "</td><td><span style=\"background-color:"
-                if self.__internet_status__.site_status[site]:
-                    new_html += "green;\">ONLINE"
-                else:
-                    new_html += "red;\">DOWN"
-
-                new_html += "</span></td></tr>\n"
-            new_html += "</table><br>\n"
-
-            new_html += "<h2>Reboots</h2>\n"
+            for site in self.__configuration__.urls_to_check:
+                try:
+                    site_status_table_rows += "<tr><td style=\"background-color:" + \
+                        online_status_colors[self.__internet_status__.site_status[site]
+                        ] + ";\"><a href=\"http://" + site + "\">" + site + "</a></td></tr>\n"
+                finally:
+                    pass
+            reboot_list = ""
 
             num_reboots = len(self.__modem_reboots__)
             if num_reboots == 0:
-                new_html += "None<BR>"
+                reboot_list += "<li>None</li>"
             else:
-                new_html += "<ul>"
                 for reboot_time in reversed(self.__modem_reboots__):
-                    new_html += "<li>"
-                    new_html += str(self.__get_local_time__(reboot_time))
-                    new_html += "</li>"
-                new_html += "</ul><br>"
+                    reboot_list += "<li>"
+                    reboot_list += str(self.__get_local_time__(reboot_time))
+                    reboot_list += "</li>"
 
-            new_html += "<p>Page generated at " + \
-                str(self.__get_local_time__(datetime.datetime.now())) + "</p>"
-        except:
-            new_html += "<h2 style=\"background-color:red;\">ERROR generating page:</h2>\n"
-            new_html += sys.exc_info()[0]
-            new_html += "<br>"
+            new_html = new_html.replace(
+                "$page_generation_time$", page_generation_time)
+            new_html = new_html.replace("$seconds_between_checks$", str(
+                self.__configuration__.seconds_between_checks))
+            new_html = new_html.replace(
+                "$uptime$", utilities.get_time_text(uptime))
+            new_html = new_html.replace("$last_check_time$", str(
+                self.__get_local_time__(self.__internet_status__.last_check_time)))
+            new_html = new_html.replace("$time_since_last_reboot$", utilities.get_time_text(
+                self.__time_since_last_reboot__()))
+            new_html = new_html.replace(
+                "$relay_time_remaining$", self.__relay_controller__.get_relay_time_remaining())
+            new_html = new_html.replace(
+                "$modem_status_with_style$", modem_status_and_style)
+            new_html = new_html.replace(
+                "$internet_status_with_style$", internet_status_and_style)
+            new_html = new_html.replace(
+                "$site_status_rows$", site_status_table_rows)
+            new_html = new_html.replace("$reboots_list$", reboot_list)
         finally:
             new_html += "</body></html>"
             StatusServer.STATUS_HTML = new_html

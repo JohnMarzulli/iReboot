@@ -51,7 +51,9 @@ class InternetStatus(object):
             return True
 
         num_sites_up = 0
-        self.site_status = {}
+
+        if self.site_status is None:
+            self.site_status = {}
 
         try:
             for site in self.__urls_to_check__:
