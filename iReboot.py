@@ -50,7 +50,7 @@ CONFIGURATION = configuration.Configuration()
 
 LOG_LEVEL = logging.INFO
 
-LOGGER = logging.getLogger("heater")
+LOGGER = logging.getLogger("ireboot")
 LOGGER.setLevel(LOG_LEVEL)
 HANDLER = logging.handlers.RotatingFileHandler(
     CONFIGURATION.log_filename, maxBytes=1048576, backupCount=3)
@@ -59,6 +59,10 @@ HANDLER.setFormatter(logging.Formatter(
 LOGGER.addHandler(HANDLER)
 
 if __name__ == '__main__':
-    COMMAND_PROCESSOR = command_processor.CommandProcessor(
-        CONFIGURATION, Logger(LOGGER))
-    COMMAND_PROCESSOR.run()
+    while True:
+        try:
+            COMMAND_PROCESSOR = command_processor.CommandProcessor(
+                CONFIGURATION, Logger(LOGGER))
+            COMMAND_PROCESSOR.run()
+        finally:
+            pass

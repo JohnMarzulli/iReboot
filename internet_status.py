@@ -3,6 +3,7 @@ Checks what the status of the internet is.
 """
 
 import datetime
+from threading import Lock
 import lib.utilities as utilities
 from lib.recurring_task import RecurringTask
 
@@ -19,13 +20,24 @@ class InternetStatus(object):
 
         return self.__is_internet_up__
 
+    def get_site_status(self):
+        """
+        Returns if each site is available or not.
+        """
+        self.__status_lock__.acquire()
+        status_copy = self.__site_status__.copy()
+        self.__status_lock__.release()
+
+        return status_copy
+
     def __init__(self, configuration, logger):
         """
         Initializes the checker.
         """
 
         self.__logger__ = logger
-        self.site_status = {}
+        self.__status_lock__ = Lock()
+        self.__site_status__ = {}
         self.__urls_to_check__ = configuration.urls_to_check
         self.__is_internet_up__ = self.__can_the_internet_be_reached__()
         self.last_check_time = datetime.datetime.now()
@@ -52,13 +64,12 @@ class InternetStatus(object):
 
         num_sites_up = 0
 
-        if self.site_status is None:
-            self.site_status = {}
+        self.__status_lock__.acquire()
 
         try:
             for site in self.__urls_to_check__:
                 contacted = utilities.ping(site)
-                self.site_status[site] = contacted
+                self.__site_status__[site] = contacted
                 if contacted:
                     num_sites_up += 1
 
@@ -69,6 +80,8 @@ class InternetStatus(object):
             if self.__logger__ is not None:
                 self.__logger__.log_warning_message(
                     "__can_the_internet_be_reached__:EXCEPTION")
+        finally:
+            self.__status_lock__.release()
 
         return num_sites_up > 0
 

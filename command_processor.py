@@ -19,7 +19,8 @@ class StatusServer(BaseHTTPRequestHandler):
     Handles the HTTP response for status.
     """
 
-    STATUS_HTML = "<html><body><h1>iReboot</h1></body></html>"
+    DEFAULT_HTML = "<html><body><h1>iReboot</h1></body></html>"
+    STATUS_CALLBACK = None
 
     def _set_headers(self):
         self.send_response(200)
@@ -32,12 +33,24 @@ class StatusServer(BaseHTTPRequestHandler):
         """
 
         self._set_headers()
-        self.wfile.write(StatusServer.STATUS_HTML)
+
+        html = StatusServer.DEFAULT_HTML
+
+        if StatusServer.STATUS_CALLBACK is not None:
+            html = StatusServer.STATUS_CALLBACK()
+
+        self.wfile.write(html)
 
     def do_HEAD(self):
+        """
+        Sets the headers.
+        """
         self._set_headers()
 
     def do_POST(self):
+        """
+        Handle posted data.
+        """
         # Doesn't do anything with posted data
         self._set_headers()
         self.wfile.write("<html><body><h1>POST!</h1></body></html>")
@@ -64,13 +77,13 @@ class CommandProcessor(object):
         if self.__logger__ is not None:
             self.__logger__.log_info_message('Press Ctrl-C to quit.')
 
-        # Serve forever never returns...
-        RecurringTask("UpdateWebpage", 1, self.__update_webpage__,
-                      self.__logger__, True)
+        # Serve forever never returns,
+        # so setup tasks off thread
         RecurringTask("ProcessConnectivity", self.__configuration__.seconds_between_checks,
                       self.__process_connectivity__, self.__logger__, True)
         RecurringTask("UpdateController", 1,
                       self.__relay_controller__.update, True)
+        StatusServer.STATUS_CALLBACK = self.get_webpage_html
 
         self.__httpd__.serve_forever()
 
@@ -210,9 +223,16 @@ class CommandProcessor(object):
         return time_to_adjust + datetime.timedelta(hours=self.__configuration__.utc_offset)
 
     def __build_table_cell_and_text__(self, key, text_dictionary, color_dictionary):
-        return "<td style=\"background-color:" + color_dictionary[key] + "; width: 50%; margin-left:auto; margin-right: auto; \">" + text_dictionary[key] + "</td>"
+        """
+        Builds a table cell with the given text and color.
+        """
+        return "<td style=\"background-color:" \
+               + color_dictionary[key] \
+               + "; width: 50%; margin-left:auto; margin-right: auto; \">" \
+               + text_dictionary[key] \
+               + "</td>"
 
-    def __update_webpage__(self):
+    def get_webpage_html(self):
         """
         Updates the webpage.
         """
@@ -248,11 +268,12 @@ class CommandProcessor(object):
                 self.__internet_status__.is_internet_up(), modem_status_text, online_status_colors)
             site_status_table_rows = ""
 
+            site_status = self.__internet_status__.get_site_status()
             for site in self.__configuration__.urls_to_check:
                 try:
                     site_status_table_rows += "<tr><td style=\"background-color:" + \
-                        online_status_colors[self.__internet_status__.site_status[site]
-                        ] + ";\"><a href=\"http://" + site + "\">" + site + "</a></td></tr>\n"
+                        online_status_colors[site_status[site]] + \
+                        ";\"><a href=\"http://" + site + "\">" + site + "</a></td></tr>\n"
                 finally:
                     pass
             reboot_list = ""
@@ -287,7 +308,6 @@ class CommandProcessor(object):
             new_html = new_html.replace("$reboots_list$", reboot_list)
         finally:
             new_html += "</body></html>"
-            StatusServer.STATUS_HTML = new_html
 
             return new_html
 
