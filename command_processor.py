@@ -152,8 +152,8 @@ class CommandProcessor(object):
             quit()
         except:
             return None
-        finally:
-            return None
+
+        return None
 
     ##############################
     #-- Event callbacks
@@ -215,16 +215,16 @@ class CommandProcessor(object):
         """
 
         try:
-            if self.__last_modem_reboot__() is None:
-                return (datetime.datetime.now() - self.__system_start_time__).total_seconds()
+            last_reboot = self.__last_modem_reboot__()
 
-            return (datetime.datetime.now() - self.__last_modem_reboot__()).total_seconds()
+            if last_reboot is not None:
+                return (datetime.datetime.now() - last_reboot).total_seconds()
         except KeyboardInterrupt:
             quit()
         except:
             return 0
-        finally:
-            return 0
+
+        return self.get_seconds_monitored()
 
     def __restart__(self):
         """
@@ -288,6 +288,15 @@ class CommandProcessor(object):
                + "; width: 50%; margin-left:auto; margin-right: auto; \">" \
                + text \
                + "</td>"
+    
+    def get_seconds_monitored(self):
+        """
+        How many seconds has this been running?
+        """
+
+        return (datetime.datetime.now() -
+                      self.__system_start_time__).total_seconds()
+
 
     def get_webpage_html(self):
         """
@@ -301,7 +310,7 @@ class CommandProcessor(object):
             #
             # <!-- $page_generation_time$ -->
             # <!-- $seconds_between_checks$ -->
-            # <!-- $uptime$ -->
+            # <!-- $monitoring_uptime$ -->
             # <!-- $last_check_time$ -->
             # <!-- $time_since_last_reboot$ -->
             # <!-- $relay_time_remaining$ -->
@@ -317,8 +326,7 @@ class CommandProcessor(object):
 
             page_generation_time = str(
                 self.__get_local_time__(datetime.datetime.now()))
-            uptime = (datetime.datetime.now() -
-                      self.__system_start_time__).total_seconds()
+            seconds_monitored = self.get_seconds_monitored()
             modem_status_and_style = self.__build_table_cell_and_text__(
                 self.__relay_controller__.is_relay_on(), relay_status_text, relay_status_colors)
             internet_status_and_style = self.__build_table_cell_and_text__(
@@ -349,7 +357,7 @@ class CommandProcessor(object):
             new_html = new_html.replace("$seconds_between_checks$", str(
                 self.__configuration__.seconds_between_checks))
             new_html = new_html.replace(
-                "$uptime$", utilities.get_time_text(uptime))
+                "$monitoring_uptime$", utilities.get_time_text(seconds_monitored))
             new_html = new_html.replace("$last_check_time$", str(
                 self.__get_local_time__(self.__internet_status__.last_check_time)))
             new_html = new_html.replace("$time_since_last_reboot$", utilities.get_time_text(
@@ -363,10 +371,12 @@ class CommandProcessor(object):
             new_html = new_html.replace(
                 "$site_status_rows$", site_status_table_rows)
             new_html = new_html.replace("$reboots_list$", reboot_list)
+        except:
+            pass
         finally:
             new_html += "</body></html>"
 
-            return new_html
+        return new_html
 
     ##############################
     #-- Servicers
