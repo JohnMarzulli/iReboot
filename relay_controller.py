@@ -94,6 +94,8 @@ class RelayManager(object):
 
                 if text.MAX_TIME in status_queue:
                     self.__max_time_immediate__()
+            except KeyboardInterrupt:
+                quit()
             except Queue.Empty:
                 pass
 

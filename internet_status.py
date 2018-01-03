@@ -76,6 +76,8 @@ class InternetStatus(object):
                 if self.__logger__ is not None:
                     self.__logger__.log_info_message(
                         site + ":" + str(contacted))
+        except KeyboardInterrupt:
+            quit()
         except:
             if self.__logger__ is not None:
                 self.__logger__.log_warning_message(
