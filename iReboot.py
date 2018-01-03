@@ -41,6 +41,7 @@ Main entry code for iReboot
 
 import logging
 import logging.handlers
+import datetime
 import configuration
 from lib.logger import Logger
 import command_processor
@@ -64,5 +65,10 @@ if __name__ == '__main__':
             COMMAND_PROCESSOR = command_processor.CommandProcessor(
                 CONFIGURATION, Logger(LOGGER))
             COMMAND_PROCESSOR.run()
+        except KeyboardInterrupt:
+            LOGGER.warning("Quitting by CTRL+C " + str(datetime.datetime.now()))
+            quit()
+        except:
+            LOGGER.warning("Got exception at " + str(datetime.datetime.now()))
         finally:
             pass

@@ -36,10 +36,13 @@ class StatusServer(BaseHTTPRequestHandler):
 
         html = StatusServer.DEFAULT_HTML
 
-        if StatusServer.STATUS_CALLBACK is not None:
-            html = StatusServer.STATUS_CALLBACK()
-
-        self.wfile.write(html)
+        try:
+            if StatusServer.STATUS_CALLBACK is not None:
+                html = StatusServer.STATUS_CALLBACK()
+        except KeyboardInterrupt:
+            quit()
+        finally:
+            self.wfile.write(html)
 
     def do_HEAD(self):
         """
@@ -77,6 +80,9 @@ class CommandProcessor(object):
         if self.__logger__ is not None:
             self.__logger__.log_info_message('Press Ctrl-C to quit.')
 
+        self.__logger__.log_warning_message(
+            "Local time is " + str(self.__get_local_time__()))
+
         # Serve forever never returns,
         # so setup tasks off thread
         RecurringTask("ProcessConnectivity", self.__configuration__.seconds_between_checks,
@@ -85,7 +91,14 @@ class CommandProcessor(object):
                       self.__relay_controller__.update, True)
         StatusServer.STATUS_CALLBACK = self.get_webpage_html
 
-        self.__httpd__.serve_forever()
+        while True:
+            try:
+                self.__httpd__.serve_forever()
+            except KeyboardInterrupt:
+                quit()
+            except:
+                self.__logger__.log_warning_message(
+                    "Got exception at " + str(self.__get_local_time__()))
 
     def __init__(self, buddy_configuration, logger):
         """
@@ -125,15 +138,22 @@ class CommandProcessor(object):
         Returns when the last reboot was.
         """
 
-        if self.__modem_reboots__ is None:
+        try:
+            if self.__modem_reboots__ is None:
+                return None
+
+            num_entries = len(self.__modem_reboots__)
+
+            if num_entries < 1:
+                return None
+
+            return self.__modem_reboots__[num_entries - 1]
+        except KeyboardInterrupt:
+            quit()
+        except:
             return None
-
-        num_entries = len(self.__modem_reboots__)
-
-        if num_entries < 1:
+        finally:
             return None
-
-        return self.__modem_reboots__[num_entries - 1]
 
     ##############################
     #-- Event callbacks
@@ -144,26 +164,44 @@ class CommandProcessor(object):
         Callback that signals the relay turned the heater on.
         """
 
-        if self.__logger__ is not None:
+        try:
             self.__logger__.log_warning_message(
                 "Starting reboot. Turning modem off.")
+        except KeyboardInterrupt:
+            quit()
+        except:
+            pass
+        finally:
+            pass
 
     def __relay_turned_off_callback__(self):
         """
         Callback that signals the relay turned the heater off.
         """
 
-        if self.__logger__ is not None:
+        try:
             self.__logger__.log_warning_message("Turning Modem on.")
+        except KeyboardInterrupt:
+            quit()
+        except:
+            pass
+        finally:
+            pass
 
     def __relay_max_time_off_callback__(self):
         """
         Callback that signals the relay turned the heater off due to the timer.
         """
 
-        if self.__logger__ is not None:
+        try:
             self.__logger__.log_warning_message(
                 "Time limit reached, turning Modem back on.")
+        except KeyboardInterrupt:
+            quit()
+        except:
+            pass
+        finally:
+            pass
 
     ##############################
     #-- Command execution
@@ -176,10 +214,17 @@ class CommandProcessor(object):
         since the process was started
         """
 
-        if self.__last_modem_reboot__() is None:
-            return (datetime.datetime.now() - self.__system_start_time__).total_seconds()
+        try:
+            if self.__last_modem_reboot__() is None:
+                return (datetime.datetime.now() - self.__system_start_time__).total_seconds()
 
-        return (datetime.datetime.now() - self.__last_modem_reboot__()).total_seconds()
+            return (datetime.datetime.now() - self.__last_modem_reboot__()).total_seconds()
+        except KeyboardInterrupt:
+            quit()
+        except:
+            return 0
+        finally:
+            return 0
 
     def __restart__(self):
         """
@@ -215,7 +260,7 @@ class CommandProcessor(object):
     #-- Recurring thread tasks
     ##############################
 
-    def __get_local_time__(self, time_to_adjust):
+    def __get_local_time__(self, time_to_adjust=datetime.datetime.now()):
         """
         Returns the local system time.
         """
@@ -226,10 +271,22 @@ class CommandProcessor(object):
         """
         Builds a table cell with the given text and color.
         """
+        text_color = "white"
+        try:
+            text_color = color_dictionary[key]
+        finally:
+            pass
+
+        text = "ERROR"
+        try:
+            text = text_dictionary[key]
+        finally:
+            pass
+
         return "<td style=\"background-color:" \
-               + color_dictionary[key] \
+               + text_color \
                + "; width: 50%; margin-left:auto; margin-right: auto; \">" \
-               + text_dictionary[key] \
+               + text \
                + "</td>"
 
     def get_webpage_html(self):
@@ -324,18 +381,29 @@ class CommandProcessor(object):
 
         should_start_reboot = False
 
-        if not self.__internet_status__.is_internet_up():
-            # Check to see if we are rebooting.
-            time_since_last_reboot = self.__time_since_last_reboot__()
-            next_reboot_time = self.__configuration__.seconds_to_wait_after_power_on \
-                + self.__configuration__.seconds_to_power_off
+        try:
+            if not self.__internet_status__.is_internet_up():
+                # Check to see if we are rebooting.
+                time_since_last_reboot = self.__time_since_last_reboot__()
+                next_reboot_time = self.__configuration__.seconds_to_wait_after_power_on \
+                    + self.__configuration__.seconds_to_power_off
 
-            if time_since_last_reboot > next_reboot_time:
-                should_start_reboot = True
+                if time_since_last_reboot > next_reboot_time:
+                    should_start_reboot = True
+        except KeyboardInterrupt:
+            quit()
+        except:
+            self.__logger__.log_warning_message("Exception while trying to decide on reboot.")
+            should_start_reboot = False
 
         if should_start_reboot:
-            self.__modem_reboots__.append(datetime.datetime.now())
-            self.__relay_controller__.turn_on()
+            try:
+                self.__modem_reboots__.append(datetime.datetime.now())
+                self.__relay_controller__.turn_on()
+            except KeyboardInterrupt:
+                quit()
+            except:
+                self.__logger__.log_warning_message("Exception while trying to start reboot.")
 
     def __run_servicer__(self, service_callback, service_name):
         """
@@ -349,8 +417,7 @@ class CommandProcessor(object):
         try:
             service_callback()
         except KeyboardInterrupt:
-            print "Stopping due to CTRL+C"
-            exit()
+            quit()
         except:
             self.__logger__.log_warning_message(
                 "Exception while servicing " + service_name)
