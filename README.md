@@ -34,13 +34,6 @@ that you are most concerned about.
 * Black wire from Relay "-" to GPIO GND
 
 
-### Status Display (_optional_)
-
-* Red wire from LCD VCC to GPIO 5V
-* Black wire from LCD GND to GPIO GND
-* White wire from LCD SDA to GPIO SDA
-* Gray wire from LCD SCL to GPIO SCL
-
 ## Additional Links And Setup Notes
 
 ## Materials List
@@ -53,10 +46,6 @@ This assumes you are building "from scratch" and need to buy a Raspberry Pi and
 associate parts. I have picked a version of the Pi Zero that has Wireless, which
 is good if you want to pull the code down directly onto the Pi
 
-Any version of the Raspberry Pi should work for this project as long as it has
-GPIO pins, and an I2C bus.
-
-The LiPo battery is absolutely required and used directly by the GSM board.
 
 A MicroUSB to USB adapter is required for the modem to connect into the Pi
 Zero's ****only**** USB port.
@@ -67,14 +56,11 @@ qid=1512070675&sr=8-5&keywords=adafruit+lipo)
 * [ ] [Iot Power Relay](https://www.amazon.com/gp/product/B00WV7GMA2/ref=oh_aui_detailpage_o01_s01?ie=UTF8&psc=1)
 * [ ] [Experimentation board with wires](https://www.amazon.com/gp/product/B01LYN4J3B/ref=oh_aui_detailpage_o08_s00?ie=UTF8&psc=1)
 
-### For Optional Status Display
-
-* [ ] [SunFounder 1602 LCD](https://www.amazon.com/gp/product/B01E6N19YC/ref=oh_aui_detailpage_o01_s00?ie=UTF8&psc=1)
 
 ### Adapters
 
 The Raspberry Pi zero uses a mini HDMI port for display. If you do not have an
-adapter, you will need one. This is not required in the installation once the
+adapter, you will need one to perform the setup. This is not required in the installation once the
 device is "deployed". The USB hub makes coding and debugging on the PI possible
 as it allows a keyboard and mouse to be connected
 simultanously.
