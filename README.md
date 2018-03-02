@@ -30,7 +30,7 @@ that you are most concerned about.
 
 ### Relay
 
-* Red wire from GPIO22 to Relay "+"
+* Red wire from GPIO22 (Board #20) to Relay "+"
 * Black wire from Relay "-" to GPIO GND
 
 
